@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SunSkin — skin AI meets today's UV</title>
+<style>
+:root{--sun:#ffb703;--ink:#1d1b16;--bg:#fff8ec;--card:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:28px 20px 8px;text-align:center}h1{margin:0;font-size:2rem}h1 span{color:#e85d04}
+.sub{opacity:.75;margin:.4rem 0 0}main{max-width:900px;margin:auto;padding:16px;display:grid;gap:16px}
+.card{background:var(--card);border-radius:18px;padding:18px;box-shadow:0 4px 18px #0001}
+button{background:var(--sun);border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;font-size:1rem}
+button.alt{background:#eee}video,img#shot{width:100%;max-width:360px;border-radius:14px;display:block;margin:10px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.bars div{margin:6px 0}.bar{height:10px;border-radius:6px;background:#eee;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#90be6d,#f9c74f,#f94144)}
+.uv{font-size:2.4rem;font-weight:800}.tag{display:inline-block;padding:3px 10px;border-radius:99px;background:#ffe8b3;margin:2px;font-size:.85rem}
+.demo{background:#fde2e4;padding:8px 12px;border-radius:10px;font-size:.9rem}
+ol li{margin:6px 0}.prod{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.prod div{border:1px solid #eee;border-radius:12px;padding:10px}
+footer{text-align:center;opacity:.6;padding:20px;font-size:.85rem}
+</style></head><body>
+<header><h1>☀️ Sun<span>Skin</span></h1><p class="sub">YouCam AI Skin Analysis + today's UV forecast → a skincare plan and shopping list for <b>your skin, today</b>.</p></header>
+<main>
+<section class="card"><h3>1 · Your selfie</h3>
+<div class="row"><button id="cam">Open camera</button><label class="row"><button class="alt" onclick="file.click()">Upload photo</button></label><input id="file" type="file" accept="image/*" hidden></div>
+<video id="v" autoplay playsinline hidden></video><button id="snap" hidden>Take selfie</button><img id="shot" hidden alt="selfie">
+<p class="sub">Photo goes only to the YouCam API for analysis. Nothing is stored by SunSkin.</p></section>
+<section class="card"><h3>2 · Today's sun where you are</h3><div class="row"><button id="loc">Use my location</button><span id="uvout"></span></div></section>
+<section class="card"><button id="go" disabled>Analyze my skin ☀️</button><div id="out"></div></section>
+</main><footer>Built by Solar DePIN Hub (Ukraine) for the YouCam API Skin AI & eCommerce VTO Hackathon · not medical advice</footer>
+<script src="app.js"></script></body></html>
