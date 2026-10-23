@@ -78,6 +78,49 @@ function norm(r) {
   return { scores, masks };
 }
 
-const api = { NAMES, uvLabel, uvWindow, plan, norm };
+
+// Skin tone -> ITA° (Individual Typology Angle, a standard colourimetric skin classification):
+// ITA = atan((L* - 50) / b*) in degrees, from CIELAB of the YouCam skin_color hex.
+function hexToLab(hex) {
+  const n = parseInt(String(hex).replace('#', ''), 16);
+  const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const r = lin(n >> 16 & 255), g = lin(n >> 8 & 255), b = lin(n & 255);
+  const x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047, y = r * 0.2126 + g * 0.7152 + b * 0.0722, z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+  const f = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+  return { L: 116 * f(y) - 16, a: 500 * (f(x) - f(y)), b: 200 * (f(y) - f(z)) };
+}
+function ita(hex) { const { L, b } = hexToLab(hex); return Math.atan2(L - 50, b) * 180 / Math.PI; }
+// ITA bands (Chardon et al. 1991): >55 very light, 41-55 light, 28-41 intermediate, 10-28 tan, -30-10 brown, < -30 dark.
+function toneAdvice(hex) {
+  if (!/^#?[0-9a-f]{6}$/i.test(String(hex || ''))) return null;
+  const v = ita(hex);
+  const band = v > 55 ? 'very light' : v > 41 ? 'light' : v > 28 ? 'intermediate' : v > 10 ? 'tan' : v > -30 ? 'brown' : 'dark';
+  const shade = v > 41 ? 'Light' : v > 28 ? 'Light-medium' : v > 10 ? 'Medium' : v > -30 ? 'Medium-deep' : 'Deep';
+  const light = v > 41;
+  return {
+    ita: Math.round(v), band, shade,
+    note: light
+      ? 'Lighter skin burns faster: never skip SPF on UV ≥ 3 days and reapply on time.'
+      : v > 28
+        ? 'Medium skin can burn and tan, and UV makes uneven tone and dark spots worse. A tinted SPF in your shade avoids a white cast, so you will actually wear it.'
+        : 'Deeper skin tans more than it burns, but UV and visible light still drive dark spots. Tinted sunscreen with iron oxides adds visible-light protection and avoids a white cast.',
+    product: { name: `Tinted mineral sunscreen SPF 50, shade "${shade}" (iron oxides)`, key: 'zinc oxide + iron oxides: UVA/UVB + visible light, no white cast', why: `YouCam skin tone ${String(hex).toLowerCase()} → ITA ${Math.round(v)}° (${band})`, must: false },
+  };
+}
+
+// Pick the aging frames closest to the given ages from YouCam AI Aging output [{res_age, url}].
+function agingPick(frames, ages) {
+  const fr = (frames || []).filter(f => f && f.url && typeof f.res_age === 'number');
+  if (!fr.length) return [];
+  return ages.map(a => fr.reduce((best, f) => Math.abs(f.res_age - a) < Math.abs(best.res_age - a) ? f : best));
+}
+
+// Compare this scan with the previous one (scores 0-100, higher = better).
+function progress(prev, cur) {
+  if (!prev) return [];
+  return Object.keys(NAMES).filter(k => prev[k] != null && cur[k] != null).map(k => ({ k, name: NAMES[k], d: Math.round(cur[k] - prev[k]) }));
+}
+
+const api = { NAMES, uvLabel, uvWindow, plan, norm, ita, toneAdvice, agingPick, progress };
 if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.SunPlan = api;
 })(typeof self !== 'undefined' ? self : this);

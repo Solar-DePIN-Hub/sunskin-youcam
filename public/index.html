@@ -4,7 +4,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☀️</text></svg>">
 <style>
 :root{--sun:#ffb703;--ink:#1d1b16;--bg:#fff8ec;--card:#fff;--mut:#6b6457;--red:#e63946}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
 header{padding:26px 18px 6px;text-align:center}h1{margin:0;font-size:2.1rem}h1 span{color:#e85d04}.sub{color:var(--mut);margin:.4rem auto 0;max-width:640px}
 main{max-width:980px;margin:auto;padding:14px;display:grid;gap:14px}.card{background:var(--card);border-radius:18px;padding:18px;box-shadow:0 4px 18px #0001}
 h3{margin:0 0 10px}button{background:var(--sun);border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;font-size:.98rem}button.alt{background:#f1ece2}button:disabled{opacity:.45;cursor:default}
@@ -16,9 +16,12 @@ video,img#shot{width:100%;max-width:320px;border-radius:14px;display:block;margi
 ol li{margin:5px 0}.prod{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.prod div{border:1px solid #eee;border-radius:12px;padding:10px;font-size:.92rem}.prod .must{border:2px solid var(--sun)}
 .pill{display:inline-block;padding:2px 9px;border-radius:99px;background:#ffe8b3;margin:2px;font-size:.8rem}.masks{display:flex;gap:8px;flex-wrap:wrap}.masks figure{margin:0;width:150px;font-size:.8rem;text-align:center}.masks img{width:150px;border-radius:10px}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:.78rem;text-align:center}.cal div{background:#faf6ee;border-radius:10px;padding:6px 2px}
-label.sw{display:flex;gap:8px;align-items:center;font-size:.95rem;margin-top:10px}footer{text-align:center;color:var(--mut);padding:20px;font-size:.85rem}a{color:#b45309}
+label.sw,.opts label{display:flex;gap:8px;align-items:center;font-size:.95rem;margin-top:10px}footer{text-align:center;color:var(--mut);padding:20px;font-size:.85rem}a{color:#b45309}
+.opts{display:flex;flex-direction:column;gap:2px;margin:4px 0 10px}.sw2{display:inline-block;width:46px;height:46px;border-radius:12px;border:2px solid #0002;vertical-align:middle;margin-right:10px}
+.age{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}.age figure{margin:0;width:170px;text-align:center;font-size:.85rem}.age img{width:170px;border-radius:12px}input[type=range]{width:100%;max-width:360px}
+.prog span{display:inline-block;margin:2px 6px 2px 0;font-size:.85rem}.up{color:#2d6a4f}.down{color:#c1121f}.steps{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0}.steps span{background:#fff1d6;border-radius:99px;padding:3px 10px;font-size:.8rem}
 </style></head><body>
-<header><h1>☀️ Sun<span>Skin</span></h1><p class="sub">YouCam <b>AI Skin Analysis</b> + your local <b>UV forecast</b> → today's routine, a sunscreen reapply schedule and a shopping list that explains every product. Made for people who spend their day in the sun.</p></header>
+<header><h1>☀️ Sun<span>Skin</span></h1><p class="sub">YouCam <b>AI Skin Analysis</b>, <b>Skin Tone</b> and <b>AI Aging</b> + your local <b>UV forecast</b> → today's routine, a sunscreen reapply schedule and a shopping list that explains every product. Made for people who spend their day in the sun.</p><div class="steps" style="justify-content:center"><span>1 selfie</span><span>2 your UV</span><span>3 a plan for today and the week</span></div></header>
 <main>
 <section class="card"><h3>1 · Your selfie</h3>
 <div class="row"><button id="cam">📷 Open camera</button><button class="alt" id="up">⬆ Upload photo</button><input id="file" type="file" accept="image/*" hidden></div>
@@ -27,6 +30,6 @@ label.sw{display:flex;gap:8px;align-items:center;font-size:.95rem;margin-top:10p
 <section class="card"><h3>2 · Today's sun where you are</h3>
 <div class="row"><button id="loc">📍 Use my location</button><select id="city" class="alt" style="padding:10px;border-radius:12px;border:0;background:#f1ece2;font-weight:700"><option value="">…or pick a city</option><option value="50.45,30.52,Kyiv">Kyiv</option><option value="46.48,30.73,Odesa">Odesa</option><option value="25.20,55.27,Dubai">Dubai</option><option value="-33.87,151.21,Sydney">Sydney</option><option value="19.43,-99.13,Mexico City">Mexico City</option></select></div><div id="uvout" style="margin-top:10px"></div>
 <label class="sw"><input type="checkbox" id="outdoor"> I work or spend several hours outdoors today (installer, farmer, courier, sport…)</label></section>
-<section class="card"><div class="row"><button id="go" disabled>Analyze my skin ☀️</button><button class="alt" id="sample">See a sample result</button><span class="note" id="mode"></span></div><div id="out"></div></section>
+<section class="card"><h3>3 · Your plan</h3><div class="opts"><label><input type="checkbox" id="optTone" checked> Match my tinted-sunscreen shade (YouCam <b>Skin Tone Analysis</b>)</label><label><input type="checkbox" id="optAge" checked> Show how my face may age (YouCam <b>AI Aging</b>), the reason SPF matters</label></div><div class="row"><button id="go" disabled>Analyze my skin ☀️</button><button class="alt" id="sample">See a sample result</button><span class="note" id="mode"></span></div><div id="out"></div></section>
 </main><footer>SunSkin by Vadym · Solar DePIN Hub (Ukraine) · YouCam API Skin AI & eCommerce VTO Hackathon · Cosmetic guidance, <b>not medical advice</b>. See a dermatologist about changing moles or skin problems.</footer>
 <script src="plan.js"></script><script src="app.js"></script></body></html>

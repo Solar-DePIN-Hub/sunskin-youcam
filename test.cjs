@@ -16,3 +16,11 @@ console.log('all tests passed');
 { const real = { output: [{ type: 'pore', ui_score: 61, raw_score: 36.3, mask_urls: ['m'] }, { type: 'moisture', ui_score: 69, raw_score: 47.1, mask_urls: ['m'] }, { type: 'all', score: 78.9, url: null }, { type: 'skin_age', score: 28, url: null }, { type: 'resize_image', mask_urls: ['r'], url: 'r' }] };
   const n = P.norm(real); a.equal(n.scores.pore, 61); a.equal(n.scores.all, 78.9); a.equal(n.scores.skin_age, 28); a.equal(n.scores.resize_image, undefined); a.equal(n.masks.pore, 'm'); }
 console.log('real-shape test passed');
+
+// Skin tone -> ITA band (tone from the Oct 23 live test) and aging frame picking.
+{ const t = P.toneAdvice('#b6967e'); a(t && t.ita > 28 && t.ita <= 41, 'b6967e is intermediate, got ' + (t && t.ita)); a.equal(t.shade, 'Light-medium');
+  a.equal(P.toneAdvice('#f3d9c8').band.includes('light'), true); a(['brown', 'dark'].includes(P.toneAdvice('#5a3a2a').band)); a.equal(P.toneAdvice('nope'), null);
+  const fr = [12, 16, 20, 24, 27, 31, 35, 39, 43, 47, 51, 55, 59].map(x => ({ res_age: x, url: 'u' + x }));
+  a.deepEqual(P.agingPick(fr, [35, 55]).map(f => f.res_age), [35, 55]); a.deepEqual(P.agingPick([], [1]), []);
+  a.deepEqual(P.progress({ pore: 50, acne: 80 }, { pore: 55, acne: 78 }), [{ k: 'pore', name: 'Pores', d: 5 }, { k: 'acne', name: 'Acne', d: -2 }]); }
+console.log('tone/aging/progress tests passed');
