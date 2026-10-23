@@ -2,7 +2,7 @@
 
 **Live:** https://sunskin-youcam.vercel.app · Built for the YouCam API Skin AI & eCommerce VTO Hackathon.
 
-SunSkin combines **YouCam AI Skin Analysis** (10 skin metrics + mask maps) with the **local UV forecast** (Open-Meteo, hourly + 7 days). It turns them into:
+SunSkin combines **three YouCam APIs**: AI Skin Analysis (10 skin metrics + mask maps), AI Skin Tone Analysis (tinted-SPF shade via ITA°) and AI Aging (future-face preview), with the **local UV forecast** (Open-Meteo, hourly + 7 days). It turns them into:
 
 - a morning and night routine for *today's* UV;
 - a **sunscreen reapply schedule** (every 2 h while UV ≥ 3) for people who work outdoors;
@@ -14,6 +14,10 @@ Server-side in `api/analyze.js` (S2S v2.0, the key never reaches the browser):
 1. `POST /s2s/v2.0/file` → presigned upload URL, then `PUT` the selfie.
 2. `POST /s2s/v2.0/task/skin-analysis` with 10 SD actions (`wrinkle, pore, texture, acne, redness, oiliness, moisture, radiance, age_spot, dark_circle_v2`) and `enable_mask_overlay`.
 3. Poll `GET /s2s/v2.0/task/skin-analysis/{task_id}` → `ui_score` per metric and `mask_urls`.
+4. In parallel on the same `file_id` (opt-in in the UI): `POST /s2s/v2.0/task/skin-tone-analysis` → `skin_color` hex → CIELAB → ITA° → shade band; `POST /s2s/v2.0/task/aging` → `[{res_age, url}]` frames shown at "now" and "+20 years" plus a slider.
+
+Units per full scan: 14 (skin, 10 SD concerns) + 20 (tone) + 2 (aging) = 36. A live scan took ~9 s on Oct 23, 2026.
+Scan history is stored only in the browser (localStorage) to show per-metric progress.
 
 The browser resizes the photo to fit YouCam SD limits (short side ≥ 480 px, long side ≤ 2560 px) and checks the lighting first, so no API units are wasted on bad photos.
 
