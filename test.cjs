@@ -10,4 +10,5 @@ a.equal(lo.spf, 'SPF 30'); a.equal(lo.reapply.length, 0);
 const n = P.norm({ output: [{ type: 'hd_acne', ui_score: 81, mask_urls: ['u'] }, { type: 'pore', ui_score: 90 }] });
 a.deepEqual(n.scores, { acne: 81, pore: 90 }); a.equal(n.masks.acne, 'u');
 a.deepEqual(hi.top, ['moisture', 'oiliness', 'dark_circle_v2']);
+const cal = P.plan(S, 1, { week: [1,1,1,1,1,1,1] }).calendar; a(cal.filter(d => d.retinoid).length <= 3); a(!cal.some((d, i) => i && d.retinoid && cal[i-1].retinoid)); a(!cal.some(d => d.retinoid && d.bha));
 console.log('all tests passed');

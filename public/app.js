@@ -32,7 +32,7 @@ async function loadSun(lat, lon, place) {
   } catch (e) { sun = { today: 5, week: [5], window: null }; $('#uvout').textContent = 'UV forecast unavailable, using UV 5 (moderate).'; }
 }
 $('#loc').onclick = () => navigator.geolocation.getCurrentPosition(p => loadSun(p.coords.latitude, p.coords.longitude, ''), () => loadSun(50.45, 30.52, 'Kyiv (location blocked)'));
-$('#kyiv').onclick = () => loadSun(50.45, 30.52, 'Kyiv');
+$('#city').onchange = e => { const [a, b, n] = e.target.value.split(','); if (n) loadSun(+a, +b, n); };
 $('#go').onclick = async () => {
   if (!sun) await loadSun(50.45, 30.52, 'Kyiv (default)');
   $('#out').innerHTML = '<p>Analyzing with YouCam AI Skin Analysis… (usually 10–30 s)</p>'; $('#go').disabled = true;

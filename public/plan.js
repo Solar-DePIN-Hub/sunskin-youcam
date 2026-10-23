@@ -44,12 +44,19 @@ function plan(s, uvToday, opts = {}) {
   const wantsRetinoid = c('wrinkle') > 30 || c('texture') > 35;
   // SunSkin rule (conservative, not medical advice): retinoids make skin more sun-sensitive,
   // so we schedule them only on nights before a day with max UV < 6.
+  const wantsBha = c('acne') > 25 || c('pore') > 40;
+  // Beginner pace: at most 3 retinoid nights a week, never two nights in a row; BHA on a different night.
+  let lastR = -2, nR = 0, nB = 0;
   const calendar = week.slice(0, 7).map((u, i) => {
     const next = week[i + 1] ?? u;
-    return { day: i, uv: u, retinoid: wantsRetinoid && next < 6, bha: (c('acne') > 25 || c('pore') > 40) && i % 2 === 1 && !(wantsRetinoid && next < 6) };
+    const retinoid = wantsRetinoid && next < 6 && i - lastR > 1 && nR < 3;
+    if (retinoid) { lastR = i; nR++; }
+    const bha = !retinoid && wantsBha && nB < 2 && i - lastR > 0 && i % 2 === 1;
+    if (bha) nB++;
+    return { day: i, uv: u, retinoid, bha };
   });
   if (wantsRetinoid) {
-    pm.push(calendar[0].retinoid ? 'Retinoid tonight (tomorrow UV is below 6)' : 'Skip retinoid tonight (high UV tomorrow)');
+    pm.push(calendar[0].retinoid ? 'Retinoid tonight (tomorrow UV is below 6)' : (week[1] ?? uvToday) >= 6 ? `Skip retinoid tonight (UV ${(week[1] ?? uvToday).toFixed(0)} tomorrow)` : 'No retinoid tonight (see your week plan)');
     add(buy, { name: 'Retinol 0.2–0.3% (beginner strength)', key: 'texture, fine lines', why: `wrinkle score ${s.wrinkle ?? '–'}, texture ${s.texture ?? '–'}; scheduled only before lower-UV days`, must: false });
   }
   pm.push(oily ? 'Light moisturizer' : 'Barrier moisturizer');
