@@ -1,0 +1,76 @@
+// SunSkin planning logic: pure functions, shared by the browser and node tests.
+// YouCam ui_score: higher = healthier skin. concern = 100 - score.
+(function (root) {
+const NAMES = { wrinkle: 'Wrinkles', pore: 'Pores', texture: 'Texture', acne: 'Acne', redness: 'Redness', oiliness: 'Oil balance', moisture: 'Moisture', radiance: 'Radiance', age_spot: 'Age spots', dark_circle_v2: 'Dark circles' };
+const uvLabel = u => u < 3 ? 'low' : u < 6 ? 'moderate' : u < 8 ? 'high' : u < 11 ? 'very high' : 'extreme';
+
+// hourly: [{h: 0..23, uv}] for today. Returns the window when UV >= 3 (WHO: protection needed).
+function uvWindow(hourly) {
+  const hrs = hourly.filter(x => x.uv >= 3).map(x => x.h);
+  if (!hrs.length) return null;
+  const peak = hourly.reduce((a, b) => (b.uv > a.uv ? b : a));
+  return { from: Math.min(...hrs), to: Math.max(...hrs) + 1, peakHour: peak.h, peakUv: peak.uv };
+}
+
+function plan(s, uvToday, opts = {}) {
+  const week = opts.week || [uvToday];          // daily UV max, today first
+  const outdoor = !!opts.outdoor;               // works/spends hours outside
+  const win = opts.window || null;
+  const c = k => 100 - (s[k] ?? 70);
+  const spf = uvToday >= 8 || outdoor && uvToday >= 3 ? 'SPF 50+' : uvToday >= 3 ? 'SPF 50' : 'SPF 30';
+  const am = [], pm = [], buy = [], why = [];
+  const add = (list, item) => { if (!list.find(x => x.name === item.name)) list.push(item); };
+
+  am.push('Gentle cleanser');
+  if (c('age_spot') > 25 || c('radiance') > 35) { am.push('Vitamin C serum'); add(buy, { name: 'Vitamin C serum (10–15% L-ascorbic acid)', key: 'antioxidant, brightening', why: `age-spot score ${s.age_spot ?? '–'}, radiance ${s.radiance ?? '–'}; pairs with sunscreen on UV days`, must: false }); }
+  if (c('moisture') > 40) { am.push('Hyaluronic acid serum'); add(buy, { name: 'Hyaluronic acid serum', key: 'hydration', why: `moisture score ${s.moisture}`, must: false }); }
+  const oily = c('oiliness') > 45;
+  am.push(oily ? 'Light gel moisturizer' : 'Cream moisturizer');
+  add(buy, { name: oily ? 'Oil-free gel moisturizer' : 'Barrier cream moisturizer (ceramides)', key: oily ? 'light, non-comedogenic' : 'ceramides', why: `oil balance score ${s.oiliness ?? '–'}`, must: false });
+  am.push(`Broad-spectrum sunscreen ${spf}` + (uvToday >= 3 ? ' as the last step' : ''));
+  add(buy, { name: `Broad-spectrum sunscreen ${spf}`, key: 'UVA + UVB', why: `today's max UV is ${uvToday.toFixed(1)} (${uvLabel(uvToday)})`, must: true });
+  if (outdoor && uvToday >= 3) {
+    add(buy, { name: 'SPF 50 stick or spray for reapplying', key: 'fast reapply over make-up / at work', why: 'you are outside during UV hours', must: true });
+    add(buy, { name: 'Wide-brim hat or cap + UV400 sunglasses', key: 'physical protection', why: 'sunscreen alone is not enough for long outdoor hours', must: true });
+  }
+
+  // Reapply schedule: every 2 h while UV >= 3 (common dermatology guidance for time outdoors).
+  const reapply = [];
+  if (win && (outdoor || uvToday >= 6)) for (let h = win.from + 2; h < win.to; h += 2) reapply.push(`${String(h).padStart(2, '0')}:00`);
+
+  pm.push('Double cleanse (removes sunscreen)');
+  if (c('acne') > 25 || c('pore') > 40) { pm.push('BHA (salicylic acid) 2–3× per week'); add(buy, { name: 'BHA 2% exfoliant (salicylic acid)', key: 'unclogs pores', why: `acne score ${s.acne ?? '–'}, pores ${s.pore ?? '–'}`, must: false }); }
+  if (c('redness') > 40) { pm.push('Niacinamide or centella serum'); add(buy, { name: 'Niacinamide 5% serum', key: 'calming, barrier', why: `redness score ${s.redness}`, must: false }); }
+  const wantsRetinoid = c('wrinkle') > 30 || c('texture') > 35;
+  // SunSkin rule (conservative, not medical advice): retinoids make skin more sun-sensitive,
+  // so we schedule them only on nights before a day with max UV < 6.
+  const calendar = week.slice(0, 7).map((u, i) => {
+    const next = week[i + 1] ?? u;
+    return { day: i, uv: u, retinoid: wantsRetinoid && next < 6, bha: (c('acne') > 25 || c('pore') > 40) && i % 2 === 1 && !(wantsRetinoid && next < 6) };
+  });
+  if (wantsRetinoid) {
+    pm.push(calendar[0].retinoid ? 'Retinoid tonight (tomorrow UV is below 6)' : 'Skip retinoid tonight (high UV tomorrow)');
+    add(buy, { name: 'Retinol 0.2–0.3% (beginner strength)', key: 'texture, fine lines', why: `wrinkle score ${s.wrinkle ?? '–'}, texture ${s.texture ?? '–'}; scheduled only before lower-UV days`, must: false });
+  }
+  pm.push(oily ? 'Light moisturizer' : 'Barrier moisturizer');
+  const top = Object.keys(NAMES).filter(k => s[k] != null).sort((a, b) => s[a] - s[b]).slice(0, 3);
+  buy.sort((a, b) => b.must - a.must);
+  return { am, pm, buy, spf, reapply, calendar, top };
+}
+
+// Normalize YouCam results: {output:[{type, ui_score, mask_urls}]}
+function norm(r) {
+  const scores = {}, masks = {};
+  const out = (r && (r.output || r)) || [];
+  (Array.isArray(out) ? out : []).forEach(x => {
+    const k = String(x.type || '').replace(/^hd_/, '');
+    const v = x.ui_score ?? x.score;
+    if (k && typeof v === 'number') scores[k] = v;
+    if (k && Array.isArray(x.mask_urls) && x.mask_urls[0]) masks[k] = x.mask_urls[0];
+  });
+  return { scores, masks };
+}
+
+const api = { NAMES, uvLabel, uvWindow, plan, norm };
+if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.SunPlan = api;
+})(typeof self !== 'undefined' ? self : this);

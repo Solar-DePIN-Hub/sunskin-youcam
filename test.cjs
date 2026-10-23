@@ -1,0 +1,13 @@
+const root = {}; new Function('self', require('fs').readFileSync(__dirname + '/public/plan.js', 'utf8'))(root); const P = root.SunPlan, a = require('assert');
+const S = { wrinkle: 62, pore: 58, texture: 60, acne: 70, redness: 55, oiliness: 47, moisture: 42, radiance: 61, age_spot: 69, dark_circle_v2: 50 };
+const hourly = Array.from({ length: 24 }, (_, h) => ({ h, uv: Math.max(0, 8 - Math.abs(13 - h) * 1.4) }));
+const w = P.uvWindow(hourly); a.equal(w.peakHour, 13); a(w.from >= 9 && w.to <= 18);
+const hi = P.plan(S, 8.2, { week: [8.2, 7, 4, 3, 6.5, 2, 5], outdoor: true, window: w });
+a.equal(hi.spf, 'SPF 50+'); a(hi.reapply.length >= 2); a(hi.buy[0].must);
+a(hi.calendar[0].retinoid === false, 'no retinoid before UV 7 day'); a(hi.calendar[1].retinoid === true, 'retinoid before UV 4 day');
+const lo = P.plan(S, 1.5, { week: [1.5, 1.2] });
+a.equal(lo.spf, 'SPF 30'); a.equal(lo.reapply.length, 0);
+const n = P.norm({ output: [{ type: 'hd_acne', ui_score: 81, mask_urls: ['u'] }, { type: 'pore', ui_score: 90 }] });
+a.deepEqual(n.scores, { acne: 81, pore: 90 }); a.equal(n.masks.acne, 'u');
+a.deepEqual(hi.top, ['moisture', 'oiliness', 'dark_circle_v2']);
+console.log('all tests passed');
