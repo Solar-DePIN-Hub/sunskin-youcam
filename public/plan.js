@@ -121,6 +121,34 @@ function progress(prev, cur) {
   return Object.keys(NAMES).filter(k => prev[k] != null && cur[k] != null).map(k => ({ k, name: NAMES[k], d: Math.round(cur[k] - prev[k]) }));
 }
 
-const api = { NAMES, uvLabel, uvWindow, plan, norm, ita, toneAdvice, agingPick, progress };
+function compareCities(s, a, b, opts = {}) {
+  const pa = plan(s, a.today, { week: a.week, outdoor: opts.outdoor, window: a.window });
+  const pb = plan(s, b.today, { week: b.week, outdoor: opts.outdoor, window: b.window });
+  const mk = (x, p) => ({
+    place: x.place,
+    uv: x.today,
+    label: uvLabel(x.today),
+    spf: p.spf,
+    reapply: p.reapply,
+    retinoidNights: p.calendar.filter(d => d.retinoid).length,
+    window: x.window
+  });
+  const A = mk(a, pa), B = mk(b, pb);
+  const diff = [];
+  if (A.spf !== B.spf) diff.push(`${a.place} needs ${A.spf} (${b.place}: ${B.spf})`);
+  if (A.reapply.length !== B.reapply.length || A.reapply.join() !== B.reapply.join()) {
+    const fmt = r => r.length ? `${r.length}× (${r.join(', ')})` : 'none';
+    diff.push(`${a.place}: reapply ${fmt(A.reapply)} vs ${b.place}: ${fmt(B.reapply)}`);
+  }
+  if (A.retinoidNights !== B.retinoidNights) diff.push(`Retinoid nights this week: ${a.place} ${A.retinoidNights}, ${b.place} ${B.retinoidNights}`);
+  return { a: A, b: B, diff };
+}
+
+function uvOnlyPlan(uvToday, opts = {}) {
+  const p = plan({}, uvToday, opts);
+  return { spf: p.spf, reapply: p.reapply, calendar: p.calendar, am: p.am, pm: p.pm, buy: p.buy.filter(x => x.must === true) };
+}
+
+const api = { compareCities, uvOnlyPlan, NAMES, uvLabel, uvWindow, plan, norm, ita, toneAdvice, agingPick, progress };
 if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.SunPlan = api;
 })(typeof self !== 'undefined' ? self : this);

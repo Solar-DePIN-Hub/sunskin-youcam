@@ -1,4 +1,4 @@
-const $ = s => document.querySelector(s); let img = null, sun = null, keyOk = null;
+const $ = s => document.querySelector(s); let img = null, sun = null, keyOk = null, lastS = null;
 const SAMPLE = { wrinkle: 62, pore: 58, texture: 60, acne: 70, redness: 55, oiliness: 47, moisture: 42, radiance: 61, age_spot: 69, dark_circle_v2: 50 };
 const uvColor = u => u < 3 ? '#52b788' : u < 6 ? '#f4a261' : u < 8 ? '#e76f51' : u < 11 ? '#d62828' : '#7b2cbf';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -44,20 +44,21 @@ $('#go').onclick = async () => {
   ready(); render(s, masks, demo, ms, tone, aging, false);
 };
 $('#sample').onclick = async () => { if (!sun) await loadSun(50.45, 30.52, 'Kyiv (default)'); render(SAMPLE, {}, true, null, $('#optTone').checked ? { skin_color: '#c69c7f' } : null, null, true); };
-function render(s, masks, demo, ms, tone, aging, sample) {
+function render(s, masks, demo, ms, tone, aging, sample, saved) {
+  lastS = s;
   const p = SunPlan.plan(s, sun.today, { week: sun.week, outdoor: $('#outdoor').checked, window: sun.window });
   const ta = tone && !tone.error ? SunPlan.toneAdvice(tone.skin_color) : null;
   if (ta) { const i = p.buy.findIndex(b => !b.must); if (i < 0) p.buy.push(ta.product); else p.buy.splice(i, 0, ta.product); }
   // Progress: compare with the previous real scan saved on this device (localStorage only).
   let prev = null, hist = [];
-  if (!demo && !sample) { try { hist = JSON.parse(localStorage.getItem('sunskin.hist') || '[]'); } catch (e) {} prev = hist[hist.length - 1] || null; hist.push({ t: Date.now(), s }); localStorage.setItem('sunskin.hist', JSON.stringify(hist.slice(-12))); }
+  if (!demo && !sample && !saved) { try { hist = JSON.parse(localStorage.getItem('sunskin.hist') || '[]'); } catch (e) {} prev = hist[hist.length - 1] || null; hist.push({ t: Date.now(), s }); localStorage.setItem('sunskin.hist', JSON.stringify(hist.slice(-12))); }
   const pr = prev ? SunPlan.progress(prev.s, s) : [];
   const fr = aging && !aging.error && aging.raw && Array.isArray(aging.raw.output) ? aging.raw.output.filter(f => f.url && typeof f.res_age === 'number') : [];
   const nowAge = s.skin_age != null ? Math.round(s.skin_age) : null;
   const pick = fr.length ? SunPlan.agingPick(fr, nowAge != null ? [nowAge, nowAge + 20] : [fr[0].res_age, fr[fr.length - 1].res_age]) : [];
   const N = SunPlan.NAMES, dn = i => i === 0 ? 'Tonight' : new Date((sun.days || [])[i] + 'T12:00').toLocaleDateString('en', { weekday: 'short' });
   const list = p.buy.map(b => `• ${b.name}: ${b.why}`).join('\n');
-  $('#out').innerHTML = (sample ? '<p class="demo">Sample result: example scores to show the layout, <b>not your skin</b>. Upload a selfie and press "Analyze my skin" for your real YouCam result.</p>' : demo ? '<p class="demo">Demo mode: this server has no YouCam API key, so these are SAMPLE scores, not your skin.</p>' : `<p class="note">YouCam AI Skin Analysis · 10 metrics${ms ? ` · ${(ms / 1000).toFixed(1)} s` : ''}</p>${s.all != null || s.skin_age != null ? `<p>${s.all != null ? `Overall skin score <b>${Math.round(s.all)}</b>/100` : ''}${s.all != null && s.skin_age != null ? ' · ' : ''}${s.skin_age != null ? `AI skin age <b>${Math.round(s.skin_age)}</b>` : ''}</p>` : ''}`) +
+  $('#out').innerHTML = (saved ? `<p class="demo" style="background:#e0f2fe">Judge demo: a <b>real</b> YouCam response (Skin Analysis + Skin Tone + AI Aging) saved on ${esc(saved)} from an AI-generated face, replayed from local files. UV is live. 0 API units spent. Upload your own selfie for a live scan.</p>` : '') + (sample ? '<p class="demo">Sample result: example scores to show the layout, <b>not your skin</b>. Upload a selfie and press "Analyze my skin" for your real YouCam result.</p>' : demo ? '<p class="demo">Demo mode: this server has no YouCam API key, so these are SAMPLE scores, not your skin.</p>' : `<p class="note">YouCam AI Skin Analysis · 10 metrics${ms ? ` · ${(ms / 1000).toFixed(1)} s` : ''}</p>${s.all != null || s.skin_age != null ? `<p>${s.all != null ? `Overall skin score <b>${Math.round(s.all)}</b>/100` : ''}${s.all != null && s.skin_age != null ? ' · ' : ''}${s.skin_age != null ? `AI skin age <b>${Math.round(s.skin_age)}</b>` : ''}</p>` : ''}`) +
   `<div class="grid2"><div><h3>Your skin <small class="note">(YouCam score, 100 = best)</small></h3><div class="bars">${Object.keys(N).filter(k => s[k] != null).map(k => `<div>${N[k]}: <b>${Math.round(s[k])}</b><div class="bar"><i style="width:${s[k]}%;background:${s[k] >= 70 ? '#52b788' : s[k] >= 50 ? '#f4a261' : '#e63946'}"></i></div></div>`).join('')}</div></div>
   <div><h3>Focus areas</h3>${p.top.map(k => `<span class="pill">${N[k]} ${Math.round(s[k])}</span>`).join('')}
   ${Object.keys(masks).length ? `<div class="masks">${p.top.filter(k => masks[k]).map(k => `<figure><img src="${esc(masks[k])}" alt="${N[k]} map"><figcaption>${N[k]}: where YouCam found it</figcaption></figure>`).join('')}</div>` : ''}
@@ -74,3 +75,49 @@ function render(s, masks, demo, ms, tone, aging, sample) {
   if ($('#ageR')) $('#ageR').oninput = e => { const f = fr[+e.target.value]; $('#ageImg').src = f.url; $('#ageL').textContent = 'age ' + f.res_age; };
   $('#copy').onclick = () => navigator.clipboard.writeText('SunSkin shopping list\n' + list).then(() => { $('#copy').textContent = '✓ Copied'; });
 }
+
+const KYIV = [50.45, 30.52, 'Kyiv'], DUBAI = [25.20, 55.27, 'Dubai'];
+async function forecast(lat, lon, place) {
+  const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=uv_index_max&hourly=uv_index&timezone=auto&forecast_days=7`).then(r => r.json());
+  const today = r.hourly.time.map((t, i) => ({ t, uv: r.hourly.uv_index[i] })).filter(x => x.t.startsWith(r.daily.time[0])).map(x => ({ h: +x.t.slice(11, 13), uv: x.uv ?? 0 }));
+  return { place, today: r.daily.uv_index_max[0] ?? 0, week: r.daily.uv_index_max.map(x => x ?? 0), days: r.daily.time, window: SunPlan.uvWindow(today) };
+}
+$('#judge').onclick = async () => {
+  const b = $('#judge'); b.disabled = true; b.textContent = 'Loading demo…';
+  try {
+    const o = await fetch('demo/real-response.json').then(r => r.json());
+    $('#shot').src = 'demo/selfie.jpg'; $('#shot').alt = 'AI-generated demo face (not a real person)'; $('#shot').hidden = false;
+    $('#optTone').checked = true; $('#optAge').checked = true;
+    if (!sun) await loadSun(...KYIV);
+    const n = SunPlan.norm(o.result);
+    render(n.scores, n.masks, false, o.ms, o.tone, o.aging, false, (o.captured || '').slice(0, 16));
+    $('#inci').value = SunInci.EXAMPLE; runInci();
+    $('#out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) { $('#out').innerHTML = `<p class="warn">Demo failed to load: ${esc(e.message)}</p>`; }
+  b.disabled = false; b.textContent = '▶ One-click judge demo';
+};
+$('#cmpBtn').onclick = async () => {
+  $('#cmp').textContent = 'Loading Kyiv and Dubai forecasts…';
+  try {
+    const [k, d] = await Promise.all([forecast(...KYIV), forecast(...DUBAI)]);
+    const s = lastS || {}, c = SunPlan.compareCities(s, k, d, { outdoor: $('#outdoor').checked });
+    const col = x => `<div><b>${esc(x.place)}</b><br><b class="big" style="color:${uvColor(x.uv)}">UV ${x.uv.toFixed(1)}</b> ${x.label}<br>${x.spf}<br>${x.window ? `Protect ${x.window.from}:00–${x.window.to}:00` : 'UV below 3 all day'}<br>⏰ ${x.reapply.length ? x.reapply.join(', ') : 'no reapply needed'}<br>🌙 retinoid nights: ${x.retinoidNights}</div>`;
+    $('#cmp').innerHTML = `<h3 style="margin-top:12px">Same skin, two suns <small class="note">(live Open-Meteo, ${lastS ? 'your last result' : 'no scan yet, default skin'})</small></h3><div class="cmp">${col(c.a)}${col(c.b)}</div>${c.diff.length ? `<ul>${c.diff.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="note">Both cities need the same plan today.</p>'}`;
+  } catch (e) { $('#cmp').innerHTML = '<p class="warn">Forecast unavailable right now. Try again in a minute.</p>'; }
+};
+$('#nophoto').onclick = async () => {
+  if (!sun) await loadSun(...KYIV);
+  const u = SunPlan.uvOnlyPlan(sun.today, { week: sun.week, outdoor: $('#outdoor').checked, window: sun.window });
+  $('#out').innerHTML = `<p class="demo" style="background:#e0f2fe">UV-only plan for ${esc(sun.place || 'your location')}: no photo needed, no API units. Add a selfie for skin-specific advice.</p><h3>Today · UV ${sun.today.toFixed(1)} → ${u.spf}</h3>${u.reapply.length ? `<p>⏰ Reapply at <b>${u.reapply.join(', ')}</b></p>` : '<p class="note">No reapply reminders needed today.</p>'}<h3>🛒 Must-haves today</h3><ul>${u.buy.map(b => `<li><b>${esc(b.name)}</b>: ${esc(b.why)}</li>`).join('')}</ul>`;
+  $('#out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+function runInci() {
+  const r = SunInci.check($('#inci').value, lastS, sun ? sun.today : 0, sun ? sun.week : []);
+  if (!r.total) { $('#inciOut').innerHTML = '<p class="warn">Paste an ingredient list first.</p>'; return; }
+  const V = { buy: '✅ Buy: nothing here clashes with your skin', 'patch-test': '🧪 Patch-test first (7–10 days, inner arm)', skip: '⛔ Skip: an ingredient clashes with your skin' };
+  const L = { good: 'good', ok: 'ok', patch: 'patch', skip: 'skip' };
+  $('#inciOut').innerHTML = `${lastS ? '' : '<p class="note">No skin scan yet: checked against general rules only. Run the demo or a scan for a personal check.</p>'}<div class="verdict v-${r.verdict}">${V[r.verdict]}</div><p class="note">Checked ${r.found.length} known ingredient(s) of ${r.total}; ${r.unknown} not in SunSkin's 25-ingredient list (not judged).</p>` +
+    r.found.map(f => `<div class="ing ${L[f.level]}"><b>${esc(f.n)}</b> · ${f.level}<br>${f.notes.length ? esc(f.notes.join('; ')) : 'no conflict with your results'}<br><small>Sources: ${f.src.map(x => `<a href="${x.u}" target="_blank" rel="noopener">${esc(x.t)}</a>`).join(', ')}</small></div>`).join('');
+}
+$('#inciGo').onclick = runInci;
+$('#inciEx').onclick = () => { $('#inci').value = SunInci.EXAMPLE; runInci(); };

@@ -1,0 +1,218 @@
+{
+ "demo": false,
+ "ms": 13573,
+ "result": {
+  "output": [
+   {
+    "ui_score": 80,
+    "mask_urls": [
+     "demo/mask_redness.jpg"
+    ],
+    "raw_score": 77.88314056396484,
+    "type": "redness",
+    "url": null
+   },
+   {
+    "ui_score": 98,
+    "mask_urls": [
+     "demo/mask_pore.jpg"
+    ],
+    "raw_score": 99.34218394756317,
+    "type": "pore",
+    "url": null
+   },
+   {
+    "ui_score": 97,
+    "mask_urls": [
+     "demo/mask_age_spot.jpg"
+    ],
+    "raw_score": 99.20372772216797,
+    "type": "age_spot",
+    "url": null
+   },
+   {
+    "ui_score": 83,
+    "mask_urls": [
+     "demo/mask_oiliness.jpg"
+    ],
+    "raw_score": 85.55184173583984,
+    "type": "oiliness",
+    "url": null
+   },
+   {
+    "ui_score": 69,
+    "mask_urls": [
+     "demo/mask_dark_circle_v2.jpg"
+    ],
+    "raw_score": 61.133259534835815,
+    "type": "dark_circle_v2",
+    "url": null
+   },
+   {
+    "ui_score": 92,
+    "mask_urls": [
+     "demo/mask_radiance.jpg"
+    ],
+    "raw_score": 95.27335166931152,
+    "type": "radiance",
+    "url": null
+   },
+   {
+    "ui_score": 98,
+    "mask_urls": [
+     "demo/mask_texture.jpg"
+    ],
+    "raw_score": 99.08549785614014,
+    "type": "texture",
+    "url": null
+   },
+   {
+    "ui_score": 87,
+    "mask_urls": [
+     "demo/mask_wrinkle.jpg"
+    ],
+    "raw_score": 93.88172626495361,
+    "type": "wrinkle",
+    "url": null
+   },
+   {
+    "ui_score": 94,
+    "mask_urls": [
+     "demo/mask_acne.jpg"
+    ],
+    "raw_score": 96.1162,
+    "type": "acne",
+    "url": null
+   },
+   {
+    "ui_score": 81,
+    "mask_urls": [
+     "demo/mask_moisture.jpg"
+    ],
+    "raw_score": 80.4455578327179,
+    "type": "moisture",
+    "url": null
+   },
+   {
+    "score": 87.9,
+    "type": "all",
+    "url": null
+   },
+   {
+    "score": 27,
+    "type": "skin_age",
+    "url": null
+   },
+   {
+    "mask_urls": [
+     "demo/mask_resize_image.jpg"
+    ],
+    "type": "resize_image",
+    "url": null
+   }
+  ]
+ },
+ "tone": {
+  "eye_color": "#3a443f",
+  "eye_color_name": "Blue",
+  "lip_color": "#bf6674",
+  "eyebrow_color": "#5b3f32",
+  "skin_color": "#bd9b7f",
+  "hair_color": "#B56637",
+  "hair_color_name": "Auburn"
+ },
+ "aging": {
+  "images": [
+   "demo/age_12.jpg",
+   "demo/age_16.jpg",
+   "demo/age_20.jpg",
+   "demo/age_24.jpg",
+   "demo/age_27.jpg",
+   "demo/age_31.jpg",
+   "demo/age_35.jpg",
+   "demo/age_39.jpg",
+   "demo/age_43.jpg",
+   "demo/age_47.jpg",
+   "demo/age_51.jpg",
+   "demo/age_55.jpg",
+   "demo/age_58.jpg",
+   "demo/age_62.jpg",
+   "demo/age_66.jpg",
+   "demo/age_70.jpg"
+  ],
+  "raw": {
+   "output": [
+    {
+     "res_age": 12,
+     "url": "demo/age_12.jpg"
+    },
+    {
+     "res_age": 16,
+     "url": "demo/age_16.jpg"
+    },
+    {
+     "res_age": 20,
+     "url": "demo/age_20.jpg"
+    },
+    {
+     "res_age": 24,
+     "url": "demo/age_24.jpg"
+    },
+    {
+     "res_age": 27,
+     "url": "demo/age_27.jpg"
+    },
+    {
+     "res_age": 31,
+     "url": "demo/age_31.jpg"
+    },
+    {
+     "res_age": 35,
+     "url": "demo/age_35.jpg"
+    },
+    {
+     "res_age": 39,
+     "url": "demo/age_39.jpg"
+    },
+    {
+     "res_age": 43,
+     "url": "demo/age_43.jpg"
+    },
+    {
+     "res_age": 47,
+     "url": "demo/age_47.jpg"
+    },
+    {
+     "res_age": 51,
+     "url": "demo/age_51.jpg"
+    },
+    {
+     "res_age": 55,
+     "url": "demo/age_55.jpg"
+    },
+    {
+     "res_age": 58,
+     "url": "demo/age_58.jpg"
+    },
+    {
+     "res_age": 62,
+     "url": "demo/age_62.jpg"
+    },
+    {
+     "res_age": 66,
+     "url": "demo/age_66.jpg"
+    },
+    {
+     "res_age": 70,
+     "url": "demo/age_70.jpg"
+    }
+   ],
+   "agd_idx": 4,
+   "age_min": 12,
+   "age": 26,
+   "num_of_photos": 16,
+   "age_max": 70
+  }
+ },
+ "captured": "2026-10-31 01:05 Kyiv, live YouCam S2S v2.0 (skin-analysis + skin-tone-analysis + aging), AI-generated (FLUX) fictional face"
+}
