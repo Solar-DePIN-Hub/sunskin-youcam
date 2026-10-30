@@ -1,4 +1,69 @@
 const $ = s => document.querySelector(s); let img = null, sun = null, keyOk = null, lastS = null;
+function shadeUI(hex) {
+  const m = SunPlan.shadeMatch(hex);
+  if (!m) return '';
+  const bestName = m.best.name;
+  const swatches = m.list.map(s => {
+    const on = s.name === bestName;
+    return `<button type="button" role="radio" aria-checked="${on}" class="shade${on ? ' on' : ''}" data-hex="${esc(s.hex)}" data-name="${esc(s.name)}"><span class="shade-chip" style="background:${esc(s.hex)}"></span><span class="shade-l">${esc(s.name)}${on ? ' · best' : ''} · ΔE ${s.dE}</span></button>`;
+  }).join('');
+  return `<div class="tryon" role="radiogroup" aria-label="Tinted SPF shade try-on"><div class="shades">${swatches}</div><div class="tryon-pair"><figure><img id="tryBefore" alt="Your selfie"><figcaption>Before</figcaption></figure><figure><canvas id="tryc" width="360" height="360" aria-label="Tinted SPF preview"></canvas><figcaption id="trycap">With tinted SPF (preview only, not a photo-real render)</figcaption></figure></div></div>`;
+}
+function hexToRgba(hex, a) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function drawTryon(hex) {
+  const c = $('#tryc'); if (!c) return;
+  const shot = $('#shot'); if (!shot || !shot.src) return;
+  const ctx = c.getContext('2d');
+  const draw = () => {
+    c.width = 360;
+    c.height = Math.round(360 * shot.naturalHeight / shot.naturalWidth);
+    const w = c.width, h = c.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(shot, 0, 0, w, h);
+    const g = ctx.createRadialGradient(w / 2, h * 0.48, 0, w / 2, h * 0.48, w * 0.36);
+    g.addColorStop(0, hexToRgba(hex, 0.55));
+    g.addColorStop(0.7, hexToRgba(hex, 0.35));
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  };
+  if (shot.complete) draw();
+  else shot.addEventListener('load', draw, { once: true });
+}
+function bindShades() {
+  const group = $('.tryon'); if (!group) return;
+  const btns = Array.from(group.querySelectorAll('.shade'));
+  const cap = $('#trycap');
+  btns.forEach(b => b.onclick = () => {
+    btns.forEach(x => { x.classList.remove('on'); x.setAttribute('aria-checked', 'false'); });
+    b.classList.add('on'); b.setAttribute('aria-checked', 'true');
+    drawTryon(b.dataset.hex);
+    if (cap) cap.textContent = `With tinted SPF "${b.dataset.name}" (preview only, not a photo-real render)`;
+  });
+  const before = $('#tryBefore');
+  const shot = $('#shot');
+  if (before && shot && shot.src) {
+    before.src = shot.src;
+    const best = btns.find(x => x.classList.contains('on'));
+    const hex = best ? best.dataset.hex : SunPlan.SHADES[0].hex;
+    const name = best ? best.dataset.name : SunPlan.SHADES[0].name;
+    drawTryon(hex);
+    if (cap) cap.textContent = `With tinted SPF "${name}" (preview only, not a photo-real render)`;
+  }
+}
 const SAMPLE = { wrinkle: 62, pore: 58, texture: 60, acne: 70, redness: 55, oiliness: 47, moisture: 42, radiance: 61, age_spot: 69, dark_circle_v2: 50 };
 const uvColor = u => u < 3 ? '#52b788' : u < 6 ? '#f4a261' : u < 8 ? '#e76f51' : u < 11 ? '#d62828' : '#7b2cbf';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -65,7 +130,7 @@ function render(s, masks, demo, ms, tone, aging, sample, saved) {
   <h3 style="margin-top:14px">Today · UV ${sun.today.toFixed(1)} <span class="pill">${SunPlan.uvLabel(sun.today)}</span></h3>
   ${p.reapply.length ? `<p>⏰ Reapply sunscreen at <b>${p.reapply.join(', ')}</b></p>` : '<p class="note">No reapply reminders needed today.</p>'}</div></div>
   ${pr.length ? `<div class="card" style="box-shadow:none;background:#faf6ee;padding:10px 14px;margin:10px 0"><b>Since your last scan</b> (${new Date(prev.t).toLocaleDateString('en')}): <span class="prog">${pr.map(x => `<span class="${x.d > 0 ? 'up' : x.d < 0 ? 'down' : ''}">${x.name} ${x.d > 0 ? '+' : ''}${x.d}</span>`).join('')}</span></div>` : ''}
-  ${ta ? `<h3>🧴 Your sunscreen shade <small class="note">(YouCam Skin Tone Analysis)</small></h3><p><span class="sw2" style="background:${esc(tone.skin_color)}"></span>Skin tone <b>${esc(tone.skin_color)}</b> · ITA ${ta.ita}° (<b>${ta.band}</b>) → tinted SPF shade <b>${ta.shade}</b>${sample ? ' <span class="pill">sample</span>' : ''}</p><p class="note">${esc(ta.note)} Lighting changes measured colour, so shoot in daylight.</p>` : (tone && tone.error ? `<p class="note">Skin tone: ${esc(tone.error)}</p>` : '')}
+  ${ta ? `<h3>🧴 Your sunscreen shade <small class="note">(YouCam Skin Tone Analysis)</small></h3><p><span class="sw2" style="background:${esc(tone.skin_color)}"></span>Skin tone <b>${esc(tone.skin_color)}</b> · ITA ${ta.ita}° (<b>${ta.band}</b>) → tinted SPF shade <b>${ta.shade}</b>${sample ? ' <span class="pill">sample</span>' : ''}</p><p class="note">${esc(ta.note)} Lighting changes measured colour, so shoot in daylight.</p>${shadeUI(tone.skin_color)}` : (tone && tone.error ? `<p class="note">Skin tone: ${esc(tone.error)}</p>` : '')}
   ${pick.length ? `<h3>⏳ Why today's SPF matters <small class="note">(YouCam AI Aging)</small></h3><div class="age">${pick.map((f, i) => `<figure><img src="${esc(f.url)}" alt="AI aging preview at ${f.res_age}"><figcaption>${i === 0 ? 'Around now' : '+20 years'} · age ${f.res_age}</figcaption></figure>`).join('')}<figure style="width:200px;text-align:left"><img id="ageImg" src="${esc(fr[0].url)}" alt="AI aging slider"><input type="range" id="ageR" min="0" max="${fr.length - 1}" value="0"><figcaption id="ageL">age ${fr[0].res_age}</figcaption></figure></div><p class="note">Generative preview, not a prediction. UV exposure is linked to about 80% of visible signs of facial ageing (Flament et al., <i>Clin Cosmet Investig Dermatol</i> 2013), and daily sunscreen is the most proven way to slow it.</p>` : (aging && aging.error ? `<p class="note">AI Aging: ${esc(aging.error)}</p>` : '')}
   <div class="grid2"><div><h3>☀️ Morning</h3><ol>${p.am.map(x => `<li>${esc(x)}</li>`).join('')}</ol></div><div><h3>🌙 Night</h3><ol>${p.pm.map(x => `<li>${esc(x)}</li>`).join('')}</ol></div></div>
   <h3>📅 Your UV-aware week</h3><div class="cal">${p.calendar.map((d, i) => `<div><b>${dn(i)}</b><br>UV ${d.uv.toFixed(0)}<br>${d.retinoid ? '🌙 retinoid' : d.bha ? '🧪 BHA' : '💧 hydrate'}</div>`).join('')}</div>
@@ -73,6 +138,7 @@ function render(s, masks, demo, ms, tone, aging, sample, saved) {
   <h3>🛒 Shopping list</h3><div class="prod">${p.buy.map(b => `<div class="${b.must ? 'must' : ''}">${b.must ? '<span class="pill">today</span><br>' : ''}<b>${esc(b.name)}</b><br><span class="note">key: ${esc(b.key)}</span><br><small>why: ${esc(b.why)}</small><br><a target="_blank" rel="noopener" href="https://www.google.com/search?tbm=shop&q=${encodeURIComponent(b.name)}">Find it →</a></div>`).join('')}</div>
   <div class="row" style="margin-top:10px"><button class="alt" id="copy">📋 Copy shopping list</button></div>`;
   if ($('#ageR')) $('#ageR').oninput = e => { const f = fr[+e.target.value]; $('#ageImg').src = f.url; $('#ageL').textContent = 'age ' + f.res_age; };
+  bindShades();
   $('#copy').onclick = () => navigator.clipboard.writeText('SunSkin shopping list\n' + list).then(() => { $('#copy').textContent = '✓ Copied'; });
 }
 
@@ -117,7 +183,7 @@ function runInci() {
   const V = { buy: '✅ Buy: nothing here clashes with your skin', 'patch-test': '🧪 Patch-test first (7–10 days, inner arm)', skip: '⛔ Skip: an ingredient clashes with your skin' };
   const L = { good: 'good', ok: 'ok', patch: 'patch', skip: 'skip' };
   $('#inciOut').innerHTML = `${lastS ? '' : '<p class="note">No skin scan yet: checked against general rules only. Run the demo or a scan for a personal check.</p>'}<div class="verdict v-${r.verdict}">${V[r.verdict]}</div><p class="note">Checked ${r.found.length} known ingredient(s) of ${r.total}; ${r.unknown} not in SunSkin's 25-ingredient list (not judged).</p>` +
-    r.found.map(f => `<div class="ing ${L[f.level]}"><b>${esc(f.n)}</b> · ${f.level}<br>${f.notes.length ? esc(f.notes.join('; ')) : 'no conflict with your results'}<br><small>Sources: ${f.src.map(x => `<a href="${x.u}" target="_blank" rel="noopener">${esc(x.t)}</a>`).join(', ')}</small></div>`).join('');
+    r.found.map(f => `<div class="ing ${L[f.level]}"><b>${esc(f.n)}</b> · ${f.level}<br>${f.notes.length ? esc(f.notes.join('; ')) : 'no conflict with your results'}<br><small>Sources: ${f.src.map(x => `<a href="${esc(/^https:\/\//.test(x.u) ? x.u : '#')}" target="_blank" rel="noopener">${esc(x.t)}</a>`).join(', ')}</small></div>`).join('');
 }
 $('#inciGo').onclick = runInci;
 $('#inciEx').onclick = () => { $('#inci').value = SunInci.EXAMPLE; runInci(); };

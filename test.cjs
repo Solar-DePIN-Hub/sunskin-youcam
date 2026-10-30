@@ -1,4 +1,9 @@
 const root = {}; new Function('self', require('fs').readFileSync(__dirname + '/public/plan.js', 'utf8'))(root); const P = root.SunPlan, a = require('assert');
+a.strictEqual(P.shadeMatch('#ebcdb0').best.name, 'Light');
+a.strictEqual(P.shadeMatch('#5f3e2c').best.name, 'Deep');
+a.strictEqual(P.shadeMatch('nope'), null);
+a.strictEqual(P.shadeMatch('#ebcdb0').list.length, 5);
+console.log('shade tests passed');
 const S = { wrinkle: 62, pore: 58, texture: 60, acne: 70, redness: 55, oiliness: 47, moisture: 42, radiance: 61, age_spot: 69, dark_circle_v2: 50 };
 const hourly = Array.from({ length: 24 }, (_, h) => ({ h, uv: Math.max(0, 8 - Math.abs(13 - h) * 1.4) }));
 const w = P.uvWindow(hourly); a.equal(w.peakHour, 13); a(w.from >= 9 && w.to <= 18);

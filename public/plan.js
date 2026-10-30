@@ -90,6 +90,25 @@ function hexToLab(hex) {
   return { L: 116 * f(y) - 16, a: 500 * (f(x) - f(y)), b: 200 * (f(y) - f(z)) };
 }
 function ita(hex) { const { L, b } = hexToLab(hex); return Math.atan2(L - 50, b) * 180 / Math.PI; }
+const SHADES = [
+  { name: 'Light', hex: '#ebcdb0' },
+  { name: 'Light-medium', hex: '#d8b08e' },
+  { name: 'Medium', hex: '#c18f6b' },
+  { name: 'Medium-deep', hex: '#94664a' },
+  { name: 'Deep', hex: '#5f3e2c' },
+];
+function shadeMatch(hex) {
+  if (!/^#?[0-9a-f]{6}$/i.test(String(hex || ''))) return null;
+  const h = String(hex).toLowerCase();
+  const lab = hexToLab(h);
+  const list = SHADES.map(s => {
+    const sl = hexToLab(s.hex);
+    const dE = Math.round(Math.hypot(lab.L - sl.L, lab.a - sl.a, lab.b - sl.b));
+    return { name: s.name, hex: s.hex, dE };
+  });
+  const best = list.reduce((a, b) => b.dE < a.dE ? b : a);
+  return { list, best };
+}
 // ITA bands (Chardon et al. 1991): >55 very light, 41-55 light, 28-41 intermediate, 10-28 tan, -30-10 brown, < -30 dark.
 function toneAdvice(hex) {
   if (!/^#?[0-9a-f]{6}$/i.test(String(hex || ''))) return null;
@@ -149,6 +168,6 @@ function uvOnlyPlan(uvToday, opts = {}) {
   return { spf: p.spf, reapply: p.reapply, calendar: p.calendar, am: p.am, pm: p.pm, buy: p.buy.filter(x => x.must === true) };
 }
 
-const api = { compareCities, uvOnlyPlan, NAMES, uvLabel, uvWindow, plan, norm, ita, toneAdvice, agingPick, progress };
+const api = { compareCities, uvOnlyPlan, NAMES, uvLabel, uvWindow, plan, norm, ita, toneAdvice, shadeMatch, agingPick, progress, SHADES };
 if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.SunPlan = api;
 })(typeof self !== 'undefined' ? self : this);

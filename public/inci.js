@@ -54,7 +54,7 @@ function check(text, s, uvToday, week) {
   const items = parse(text), p = profile(s, uvToday, week), found = [];
   let unknown = 0;
   items.forEach(it => {
-    const g = ING.find(x => x.a.some(a => it === a || (a.length > 6 && it.startsWith(a + ' '))));
+    const g = ING.find(x => x.a.some(a => it === a || (a.length > 6 && it.startsWith(a + ' ') && !/\b(free|without)\b/.test(it.slice(a.length)))));
     if (!g) { unknown++; return; }
     if (found.find(f => f.n === g.n)) return;
     const T = g.t, notes = []; let level = 'ok';
