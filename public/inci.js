@@ -1,5 +1,5 @@
 // SunSkin INCI check: ~25 well-known ingredients, rules taken from the cited public sources only.
-// "Concern" thresholds are SunSkin's own trigger (YouCam score < 70 or among your 3 lowest), not a clinical cut-off.
+// "Concern" thresholds are SunSkin's own trigger (YouCam score below 70, the same line where SunSkin's score bars turn orange), not a clinical cut-off.
 (function (root) {
 const SRC = {
   fda_aha: ['FDA: Alpha Hydroxy Acids', 'https://www.fda.gov/cosmetics/cosmetic-ingredients/alpha-hydroxy-acids'],
@@ -45,8 +45,7 @@ const norm = x => x.toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9 .]/
 function parse(text) { return String(text || '').split(/[,;\n•]+/).map(norm).filter(Boolean); }
 function profile(s, uvToday, week) {
   s = s || {}; const keys = ['wrinkle', 'pore', 'texture', 'acne', 'redness', 'oiliness', 'moisture', 'radiance', 'age_spot', 'dark_circle_v2'].filter(k => typeof s[k] === 'number');
-  const low = keys.slice().sort((a, b) => s[a] - s[b]).slice(0, 3);
-  const c = k => typeof s[k] === 'number' && (s[k] < 70 || low.includes(k));
+  const c = k => typeof s[k] === 'number' && s[k] < 70;
   const highUv = (uvToday || 0) >= 6 || (week || []).filter(u => u >= 6).length >= 3;
   return { dry: c('moisture'), red: c('redness'), acne: c('acne') || c('pore'), oily: c('oiliness'), highUv, uv: uvToday || 0, hasScores: keys.length > 0, s };
 }
