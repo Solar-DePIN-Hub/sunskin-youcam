@@ -1,4 +1,4 @@
-const $ = s => document.querySelector(s); let img = null, sun = null, keyOk = null, lastS = null;
+const $ = s => document.querySelector(s); let img = null, sun = null, keyOk = null, lastS = null, progTimer = null;
 function shadeUI(hex) {
   const m = SunPlan.shadeMatch(hex);
   if (!m) return '';
@@ -100,16 +100,28 @@ $('#loc').onclick = () => navigator.geolocation.getCurrentPosition(p => loadSun(
 $('#city').onchange = e => { const [a, b, n] = e.target.value.split(','); if (n) loadSun(+a, +b, n); };
 $('#go').onclick = async () => {
   if (!sun) await loadSun(50.45, 30.52, 'Kyiv (default)');
-  $('#out').innerHTML = '<p>Analyzing with YouCam AI Skin Analysis… (usually 5–15 s)</p>'; $('#go').disabled = true;
+  $('#out').innerHTML = '<div class="prog" role="status" aria-live="polite"><div class="bar"><i></i></div><p id="progT">Uploading photo to YouCam…</p></div>';
+  $('#out').setAttribute('aria-busy','true');
+  const steps = [['Uploading photo to YouCam…',0],['YouCam Skin Analysis: 10 metrics + mask maps…',2],['Skin Tone + AI Aging in parallel…',6],['Building your UV plan…',10]];
+  const t0 = Date.now();
+  progTimer = setInterval(() => {
+    const el = document.getElementById('progT'); if (!el) { clearInterval(progTimer); return; }
+    const sec = (Date.now() - t0) / 1000;
+    let cur = steps[0][0];
+    for (const [txt, at] of steps) { if (sec >= at) cur = txt; }
+    el.textContent = cur;
+  }, 250);
+  $('#go').disabled = true;
   let s, masks = {}, demo = false, ms = null, tone = null, aging = null;
   try {
     const r = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: img, tone: $('#optTone').checked, aging: $('#optAge').checked }) }).then(r => r.json());
     if (r.demo) { demo = true; s = SAMPLE; } else if (r.error) throw new Error(r.error); else { const n = SunPlan.norm(r.result); s = n.scores; masks = n.masks; ms = r.ms; tone = r.tone; aging = r.aging; if (!Object.keys(s).length) throw new Error('No scores returned. Try a clearer, front-facing photo.'); }
-  } catch (e) { $('#out').innerHTML = `<p class="warn">Could not analyze: ${esc(e.message)}</p>`; ready(); return; }
+  } catch (e) { clearInterval(progTimer); $('#out').removeAttribute('aria-busy'); $('#out').innerHTML = `<p class="warn">Could not analyze: ${esc(e.message)}</p>`; ready(); return; }
   ready(); render(s, masks, demo, ms, tone, aging, false);
 };
 $('#sample').onclick = async () => { if (!sun) await loadSun(50.45, 30.52, 'Kyiv (default)'); render(SAMPLE, {}, true, null, $('#optTone').checked ? { skin_color: '#c69c7f' } : null, null, true); };
 function render(s, masks, demo, ms, tone, aging, sample, saved) {
+  clearInterval(progTimer); $('#out').removeAttribute('aria-busy');
   lastS = s;
   const p = SunPlan.plan(s, sun.today, { week: sun.week, outdoor: $('#outdoor').checked, window: sun.window });
   const ta = tone && !tone.error ? SunPlan.toneAdvice(tone.skin_color) : null;
