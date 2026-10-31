@@ -96,10 +96,10 @@ async function loadSun(lat, lon, place) {
       <div class="week">${sun.week.map((u, i) => `<div style="background:${uvColor(u)}">${dn(sun.days[i])}<br>${u.toFixed(0)}</div>`).join('')}</div><div class="note">7-day max UV (Open-Meteo)</div>`;
   } catch (e) { sun = { today: 5, week: [5], window: null }; $('#uvout').textContent = 'UV forecast unavailable, using UV 5 (moderate).'; }
 }
-$('#loc').onclick = () => navigator.geolocation.getCurrentPosition(p => loadSun(p.coords.latitude, p.coords.longitude, ''), () => loadSun(50.45, 30.52, 'Kyiv (location blocked)'));
+$('#loc').onclick = () => navigator.geolocation.getCurrentPosition(p => loadSun(p.coords.latitude, p.coords.longitude, ''), () => loadSun(51.51, -0.13, 'London (location blocked)'));
 $('#city').onchange = e => { const [a, b, n] = e.target.value.split(','); if (n) loadSun(+a, +b, n); };
 $('#go').onclick = async () => {
-  if (!sun) await loadSun(50.45, 30.52, 'Kyiv (default)');
+  if (!sun) await loadSun(51.51, -0.13, 'London (default)');
   $('#out').innerHTML = '<div class="prog" role="status" aria-live="polite"><div class="bar"><i></i></div><p id="progT">Uploading photo to YouCam…</p></div>';
   $('#out').setAttribute('aria-busy','true');
   const steps = [['Uploading photo to YouCam…',0],['YouCam Skin Analysis: 10 metrics + mask maps…',2],['Skin Tone + AI Aging in parallel…',6],['Building your UV plan…',10]];
@@ -119,7 +119,7 @@ $('#go').onclick = async () => {
   } catch (e) { clearInterval(progTimer); $('#out').removeAttribute('aria-busy'); $('#out').innerHTML = `<p class="warn">Could not analyze: ${esc(e.message)}</p>`; ready(); return; }
   ready(); render(s, masks, demo, ms, tone, aging, false);
 };
-$('#sample').onclick = async () => { if (!sun) await loadSun(50.45, 30.52, 'Kyiv (default)'); render(SAMPLE, {}, true, null, $('#optTone').checked ? { skin_color: '#c69c7f' } : null, null, true); };
+$('#sample').onclick = async () => { if (!sun) await loadSun(51.51, -0.13, 'London (default)'); render(SAMPLE, {}, true, null, $('#optTone').checked ? { skin_color: '#c69c7f' } : null, null, true); };
 function render(s, masks, demo, ms, tone, aging, sample, saved) {
   clearInterval(progTimer); $('#out').removeAttribute('aria-busy');
   lastS = s;
@@ -143,18 +143,18 @@ function render(s, masks, demo, ms, tone, aging, sample, saved) {
   ${p.reapply.length ? `<p>⏰ Reapply sunscreen at <b>${p.reapply.join(', ')}</b></p>` : '<p class="note">No reapply reminders needed today.</p>'}</div></div>
   ${pr.length ? `<div class="card" style="box-shadow:none;background:#faf6ee;padding:10px 14px;margin:10px 0"><b>Since your last scan</b> (${new Date(prev.t).toLocaleDateString('en')}): <span class="prog">${pr.map(x => `<span class="${x.d > 0 ? 'up' : x.d < 0 ? 'down' : ''}">${x.name} ${x.d > 0 ? '+' : ''}${x.d}</span>`).join('')}</span></div>` : ''}
   ${ta ? `<h3>🧴 Your sunscreen shade <small class="note">(YouCam Skin Tone Analysis)</small></h3><p><span class="sw2" style="background:${esc(tone.skin_color)}"></span>Skin tone <b>${esc(tone.skin_color)}</b> · ITA ${ta.ita}° (<b>${ta.band}</b>) → tinted SPF shade <b>${ta.shade}</b>${sample ? ' <span class="pill">sample</span>' : ''}</p><p class="note">${esc(ta.note)} Lighting changes measured colour, so shoot in daylight.</p>${shadeUI(tone.skin_color)}` : (tone && tone.error ? `<p class="note">Skin tone: ${esc(tone.error)}</p>` : '')}
-  ${pick.length ? `<h3>⏳ Why today's SPF matters <small class="note">(YouCam AI Aging)</small></h3><div class="age">${pick.map((f, i) => `<figure><img src="${esc(f.url)}" alt="AI aging preview at ${f.res_age}"><figcaption>${i === 0 ? 'Around now' : '+20 years'} · age ${f.res_age}</figcaption></figure>`).join('')}<figure style="width:200px;text-align:left"><img id="ageImg" src="${esc(fr[0].url)}" alt="AI aging slider"><input type="range" id="ageR" min="0" max="${fr.length - 1}" value="0"><figcaption id="ageL">age ${fr[0].res_age}</figcaption></figure></div><p class="note">Generative preview, not a prediction. UV exposure is linked to about 80% of visible signs of facial ageing (Flament et al., <i>Clin Cosmet Investig Dermatol</i> 2013), and daily sunscreen is the most proven way to slow it.</p>` : (aging && aging.error ? `<p class="note">AI Aging: ${esc(aging.error)}</p>` : '')}
+  ${pick.length ? `<h3>⏳ Why today's SPF matters <small class="note">(YouCam AI Aging)</small></h3><div class="age">${pick.map((f, i) => `<figure><img src="${esc(f.url)}" alt="AI aging preview at ${f.res_age}"><figcaption>${i === 0 ? 'Around now' : '+20 years'} · age ${f.res_age}</figcaption></figure>`).join('')}<figure style="width:200px;text-align:left"><img id="ageImg" src="${esc(fr[Math.max(0, fr.indexOf(pick[0]))].url)}" alt="AI aging slider"><input type="range" id="ageR" min="0" max="${fr.length - 1}" value="${Math.max(0, fr.indexOf(pick[0]))}"><figcaption id="ageL">drag: age ${fr[Math.max(0, fr.indexOf(pick[0]))].res_age}</figcaption></figure></div><p class="note">Generative preview, not a prediction. UV exposure is linked to about 80% of visible signs of facial ageing (Flament et al., <i>Clin Cosmet Investig Dermatol</i> 2013), and daily sunscreen is the most proven way to slow it.</p>` : (aging && aging.error ? `<p class="note">AI Aging: ${esc(aging.error)}</p>` : '')}
   <div class="grid2"><div><h3>☀️ Morning</h3><ol>${p.am.map(x => `<li>${esc(x)}</li>`).join('')}</ol></div><div><h3>🌙 Night</h3><ol>${p.pm.map(x => `<li>${esc(x)}</li>`).join('')}</ol></div></div>
   <h3>📅 Your UV-aware week</h3><div class="cal">${p.calendar.map((d, i) => `<div><b>${dn(i)}</b><br>UV ${d.uv.toFixed(0)}<br>${d.retinoid ? '🌙 retinoid' : d.bha ? '🧪 BHA' : '💧 hydrate'}</div>`).join('')}</div>
   <p class="note">SunSkin rule: retinoids make skin more sun-sensitive, so they are scheduled only on nights before a day with max UV below 6.</p>
-  <h3>🛒 Shopping list</h3><div class="prod">${p.buy.map(b => `<div class="${b.must ? 'must' : ''}">${b.must ? '<span class="pill">today</span><br>' : ''}<b>${esc(b.name)}</b><br><span class="note">key: ${esc(b.key)}</span><br><small>why: ${esc(b.why)}</small><br><a target="_blank" rel="noopener" href="https://www.google.com/search?tbm=shop&q=${encodeURIComponent(b.name)}">Find it →</a></div>`).join('')}</div>
+  <h3>🛒 Shopping list</h3><div class="prod">${p.buy.map(b => `<div class="${b.must ? 'must' : ''}">${b.must ? '<span class="pill">today</span><br>' : ''}<b>${(/sunscreen|spf/i.test(b.name) ? '🧴 ' : /moistur|cream/i.test(b.name) ? '💧 ' : /retin/i.test(b.name) ? '🌙 ' : /bha|salicyl|acid/i.test(b.name) ? '🧪 ' : '✨ ')}${esc(b.name)}</b><br><span class="note">key: ${esc(b.key)}</span><br><small>why: ${esc(b.why)}</small><br><a target="_blank" rel="noopener" href="https://www.google.com/search?tbm=shop&q=${encodeURIComponent(b.name)}">Find it →</a></div>`).join('')}</div>
   <div class="row" style="margin-top:10px"><button class="alt" id="copy">📋 Copy shopping list</button></div>`;
   if ($('#ageR')) $('#ageR').oninput = e => { const f = fr[+e.target.value]; $('#ageImg').src = f.url; $('#ageL').textContent = 'age ' + f.res_age; };
   bindShades();
   $('#copy').onclick = () => navigator.clipboard.writeText('SunSkin shopping list\n' + list).then(() => { $('#copy').textContent = '✓ Copied'; });
 }
 
-const KYIV = [50.45, 30.52, 'Kyiv'], DUBAI = [25.20, 55.27, 'Dubai'];
+const LONDON = [51.51, -0.13, 'London'], DUBAI = [25.20, 55.27, 'Dubai'];
 async function forecast(lat, lon, place) {
   const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=uv_index_max&hourly=uv_index&timezone=auto&forecast_days=7`).then(r => r.json());
   const today = r.hourly.time.map((t, i) => ({ t, uv: r.hourly.uv_index[i] })).filter(x => x.t.startsWith(r.daily.time[0])).map(x => ({ h: +x.t.slice(11, 13), uv: x.uv ?? 0 }));
@@ -166,7 +166,7 @@ $('#judge').onclick = async () => {
     const o = await fetch('demo/real-response.json').then(r => r.json());
     $('#shot').src = 'demo/selfie.jpg'; $('#shot').alt = 'AI-generated demo face (not a real person)'; $('#shot').hidden = false;
     $('#optTone').checked = true; $('#optAge').checked = true;
-    if (!sun) await loadSun(...KYIV);
+    if (!sun) await loadSun(...LONDON);
     const n = SunPlan.norm(o.result);
     render(n.scores, n.masks, false, o.ms, o.tone, o.aging, false, (o.captured || '').slice(0, 16));
     $('#inci').value = SunInci.EXAMPLE; runInci();
@@ -175,16 +175,16 @@ $('#judge').onclick = async () => {
   b.disabled = false; b.textContent = '▶ One-click judge demo';
 };
 $('#cmpBtn').onclick = async () => {
-  $('#cmp').textContent = 'Loading Kyiv and Dubai forecasts…';
+  $('#cmp').textContent = 'Loading London and Dubai forecasts…';
   try {
-    const [k, d] = await Promise.all([forecast(...KYIV), forecast(...DUBAI)]);
+    const [k, d] = await Promise.all([forecast(...LONDON), forecast(...DUBAI)]);
     const s = lastS || {}, c = SunPlan.compareCities(s, k, d, { outdoor: $('#outdoor').checked });
     const col = x => `<div><b>${esc(x.place)}</b><br><b class="big" style="color:${uvColor(x.uv)}">UV ${x.uv.toFixed(1)}</b> ${x.label}<br>${x.spf}<br>${x.window ? `Protect ${x.window.from}:00–${x.window.to}:00` : 'UV below 3 all day'}<br>⏰ ${x.reapply.length ? x.reapply.join(', ') : 'no reapply needed'}<br>🌙 retinoid nights: ${x.retinoidNights}</div>`;
     $('#cmp').innerHTML = `<h3 style="margin-top:12px">Same skin, two suns <small class="note">(live Open-Meteo, ${lastS ? 'your last result' : 'no scan yet, default skin'})</small></h3><div class="cmp">${col(c.a)}${col(c.b)}</div>${c.diff.length ? `<ul>${c.diff.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="note">Both cities need the same plan today.</p>'}`;
   } catch (e) { $('#cmp').innerHTML = '<p class="warn">Forecast unavailable right now. Try again in a minute.</p>'; }
 };
 $('#nophoto').onclick = async () => {
-  if (!sun) await loadSun(...KYIV);
+  if (!sun) await loadSun(...LONDON);
   const u = SunPlan.uvOnlyPlan(sun.today, { week: sun.week, outdoor: $('#outdoor').checked, window: sun.window });
   $('#out').innerHTML = `<p class="demo" style="background:#e0f2fe">UV-only plan for ${esc(sun.place || 'your location')}: no photo needed, no API units. Add a selfie for skin-specific advice.</p><h3>Today · UV ${sun.today.toFixed(1)} → ${u.spf}</h3>${u.reapply.length ? `<p>⏰ Reapply at <b>${u.reapply.join(', ')}</b></p>` : '<p class="note">No reapply reminders needed today.</p>'}<h3>🛒 Must-haves today</h3><ul>${u.buy.map(b => `<li><b>${esc(b.name)}</b>: ${esc(b.why)}</li>`).join('')}</ul>`;
   $('#out').scrollIntoView({ behavior: 'smooth', block: 'start' });

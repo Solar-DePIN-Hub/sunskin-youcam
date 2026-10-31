@@ -30,10 +30,10 @@ console.log('real-shape test passed');
   a.deepEqual(P.progress({ pore: 50, acne: 80 }, { pore: 55, acne: 78 }), [{ k: 'pore', name: 'Pores', d: 5 }, { k: 'acne', name: 'Acne', d: -2 }]); }
 console.log('tone/aging/progress tests passed');
 
-// Coder agent: Kyiv vs Dubai comparison + UV-only plan.
-{ const kyiv = { place: 'Kyiv', today: 1.2, week: [1.2, 1, 1.5, 1, 0.8, 1, 1.1], window: null };
+// Coder agent: London vs Dubai comparison + UV-only plan.
+{ const lon = { place: 'London', today: 1.2, week: [1.2, 1, 1.5, 1, 0.8, 1, 1.1], window: null };
   const dubai = { place: 'Dubai', today: 7.8, week: [7.8, 8, 7.5, 8, 7.9, 8, 7.7], window: { from: 8, to: 17, peakHour: 12, peakUv: 7.8 } };
-  const c = P.compareCities(S, kyiv, dubai, { outdoor: true });
+  const c = P.compareCities(S, lon, dubai, { outdoor: true });
   a.equal(c.a.spf, 'SPF 30'); a.equal(c.b.spf, 'SPF 50+'); a.equal(c.a.retinoidNights, 3); a.equal(c.b.retinoidNights, 0); a.equal(c.diff.length, 3);
   const u = P.uvOnlyPlan(7.8, { outdoor: true, window: dubai.window }); a.equal(u.buy.length, 3); a(u.buy.every(b => b.must)); a(u.reapply.length >= 3); }
 console.log('compare/uv-only tests passed');

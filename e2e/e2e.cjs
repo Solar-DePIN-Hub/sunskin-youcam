@@ -15,7 +15,7 @@ const chk = []; const ok = (n, c, d = '') => { chk.push([n, !!c, d]); };
     ok(`${vp}: INCI verdict`, /Skip|Patch|Buy/.test(await p.locator('#inciOut .verdict').innerText()));
     ok(`${vp}: INCI sources are links`, (await p.locator('#inciOut a[href^="https://"]').count()) > 3);
     await p.click('#cmpBtn'); await p.waitForSelector('#cmp .cmp', { timeout: 20000 }); const ct = await p.locator('#cmp').innerText();
-    ok(`${vp}: Kyiv vs Dubai side by side`, /Kyiv/.test(ct) && /Dubai/.test(ct) && (ct.match(/UV \d/g) || []).length >= 2);
+    ok(`${vp}: London vs Dubai side by side`, /London/.test(ct) && /Dubai/.test(ct) && (ct.match(/UV \d/g) || []).length >= 2);
     await p.click('#nophoto'); await p.waitForSelector('#out h3', { timeout: 5000 }); ok(`${vp}: no-photo UV plan`, /UV-only plan/.test(await p.locator('#out').innerText()) && /SPF/.test(await p.locator('#out').innerText()));
     ok(`${vp}: no horizontal overflow`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), await p.evaluate(() => document.documentElement.scrollWidth + '/' + innerWidth));
     const a11y = await p.evaluate(() => ({ img: [...document.images].filter(i => !i.hidden && !i.alt).length, btn: [...document.querySelectorAll('button')].filter(x => !x.innerText.trim() && !x.getAttribute('aria-label')).length,
