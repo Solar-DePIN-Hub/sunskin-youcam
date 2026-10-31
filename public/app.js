@@ -1,11 +1,13 @@
 const $ = s => document.querySelector(s); let img = null, sun = null, keyOk = null, lastS = null, progTimer = null;
-function shadeUI(hex) {
+function shadeUI(hex, recommended) {
   const m = SunPlan.shadeMatch(hex);
   if (!m) return '';
-  const bestName = m.best.name;
+  const inList = m.list.some(s => s.name === recommended);
+  const selName = inList ? recommended : m.best.name;
+  const selLabel = inList ? 'your shade' : 'closest';
   const swatches = m.list.map(s => {
-    const on = s.name === bestName;
-    return `<button type="button" role="radio" aria-checked="${on}" class="shade${on ? ' on' : ''}" data-hex="${esc(s.hex)}" data-name="${esc(s.name)}"><span class="shade-chip" style="background:${esc(s.hex)}"></span><span class="shade-l">${esc(s.name)}${on ? ' · best' : ''} · ΔE ${s.dE}</span></button>`;
+    const on = s.name === selName;
+    return `<button type="button" role="radio" aria-checked="${on}" class="shade${on ? ' on' : ''}" data-hex="${esc(s.hex)}" data-name="${esc(s.name)}"><span class="shade-chip" style="background:${esc(s.hex)}"></span><span class="shade-l">${esc(s.name)}${on ? ' · ' + selLabel : ''} · ΔE ${s.dE}</span></button>`;
   }).join('');
   return `<div class="tryon" role="radiogroup" aria-label="Tinted SPF shade try-on"><div class="shades">${swatches}</div><div class="tryon-pair"><figure><img id="tryBefore" alt="Your selfie"><figcaption>Before</figcaption></figure><figure><canvas id="tryc" width="360" height="360" aria-label="Tinted SPF preview"></canvas><figcaption id="trycap">With tinted SPF (preview only, not a photo-real render)</figcaption></figure></div></div>`;
 }
@@ -142,7 +144,7 @@ function render(s, masks, demo, ms, tone, aging, sample, saved) {
   <h3 style="margin-top:14px">Today · UV ${sun.today.toFixed(1)} <span class="pill">${SunPlan.uvLabel(sun.today)}</span></h3>
   ${p.reapply.length ? `<p>⏰ Reapply sunscreen at <b>${p.reapply.join(', ')}</b></p>` : '<p class="note">No reapply reminders needed today.</p>'}</div></div>
   ${pr.length ? `<div class="card" style="box-shadow:none;background:#faf6ee;padding:10px 14px;margin:10px 0"><b>Since your last scan</b> (${new Date(prev.t).toLocaleDateString('en')}): <span class="prog">${pr.map(x => `<span class="${x.d > 0 ? 'up' : x.d < 0 ? 'down' : ''}">${x.name} ${x.d > 0 ? '+' : ''}${x.d}</span>`).join('')}</span></div>` : ''}
-  ${ta ? `<h3>🧴 Your sunscreen shade <small class="note">(YouCam Skin Tone Analysis)</small></h3><p><span class="sw2" style="background:${esc(tone.skin_color)}"></span>Skin tone <b>${esc(tone.skin_color)}</b> · ITA ${ta.ita}° (<b>${ta.band}</b>) → tinted SPF shade <b>${ta.shade}</b>${sample ? ' <span class="pill">sample</span>' : ''}</p><p class="note">${esc(ta.note)} Lighting changes measured colour, so shoot in daylight.</p>${shadeUI(tone.skin_color)}` : (tone && tone.error ? `<p class="note">Skin tone: ${esc(tone.error)}</p>` : '')}
+  ${ta ? `<h3>🧴 Your sunscreen shade <small class="note">(YouCam Skin Tone Analysis)</small></h3><p><span class="sw2" style="background:${esc(tone.skin_color)}"></span>Skin tone <b>${esc(tone.skin_color)}</b> · ITA ${ta.ita}° (<b>${ta.band}</b>) → tinted SPF shade <b>${ta.shade}</b>${sample ? ' <span class="pill">sample</span>' : ''}</p><p class="note">${esc(ta.note)} Lighting changes measured colour, so shoot in daylight.</p>${shadeUI(tone.skin_color, ta.shade)}` : (tone && tone.error ? `<p class="note">Skin tone: ${esc(tone.error)}</p>` : '')}
   ${pick.length ? `<h3>⏳ Why today's SPF matters <small class="note">(YouCam AI Aging)</small></h3><div class="age">${pick.map((f, i) => `<figure><img src="${esc(f.url)}" alt="AI aging preview at ${f.res_age}"><figcaption>${i === 0 ? 'Around now' : '+20 years'} · age ${f.res_age}</figcaption></figure>`).join('')}<figure style="width:200px;text-align:left"><img id="ageImg" src="${esc(fr[Math.max(0, fr.indexOf(pick[0]))].url)}" alt="AI aging slider"><input type="range" id="ageR" min="0" max="${fr.length - 1}" value="${Math.max(0, fr.indexOf(pick[0]))}"><figcaption id="ageL">drag: age ${fr[Math.max(0, fr.indexOf(pick[0]))].res_age}</figcaption></figure></div><p class="note">Generative preview, not a prediction. UV exposure is linked to about 80% of visible signs of facial ageing (Flament et al., <i>Clin Cosmet Investig Dermatol</i> 2013), and daily sunscreen is the most proven way to slow it.</p>` : (aging && aging.error ? `<p class="note">AI Aging: ${esc(aging.error)}</p>` : '')}
   <div class="grid2"><div><h3>☀️ Morning</h3><ol>${p.am.map(x => `<li>${esc(x)}</li>`).join('')}</ol></div><div><h3>🌙 Night</h3><ol>${p.pm.map(x => `<li>${esc(x)}</li>`).join('')}</ol></div></div>
   <h3>📅 Your UV-aware week</h3><div class="cal">${p.calendar.map((d, i) => `<div><b>${dn(i)}</b><br>UV ${d.uv.toFixed(0)}<br>${d.retinoid ? '🌙 retinoid' : d.bha ? '🧪 BHA' : '💧 hydrate'}</div>`).join('')}</div>
