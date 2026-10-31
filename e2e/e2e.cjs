@@ -6,7 +6,7 @@ const chk = []; const ok = (n, c, d = '') => { chk.push([n, !!c, d]); };
     const p = await (await b.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob })).newPage();
     const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => m.type() === 'error' && !/favicon/.test(m.text()) && errs.push(m.text()));
     await p.goto(U); const t0 = Date.now();
-    await p.click('#judge'); await p.waitForSelector('#out .bars div', { timeout: 15000 }); await p.waitForSelector('#inciOut .verdict', { timeout: 5000 });
+    await p.evaluate(()=>{location.hash='#plan'}); await p.waitForTimeout(300); await p.click('#judge'); await p.waitForSelector('#out .bars div', { timeout: 15000 }); await p.waitForSelector('#inciOut .verdict', { timeout: 5000, state: 'attached' });
     ok(`${vp}: judge demo renders in <8s`, Date.now() - t0 < 8000, `${Date.now() - t0} ms`);
     ok(`${vp}: saved-real banner + 10 metrics`, await p.locator('#out .demo').innerText().then(t => /real/.test(t) && /0 API units/.test(t)) && (await p.locator('#out .bars > div').count()) >= 10);
     await p.waitForTimeout(800);
@@ -14,9 +14,9 @@ const chk = []; const ok = (n, c, d = '') => { chk.push([n, !!c, d]); };
     ok(`${vp}: tone shade shown`, /ITA/.test(await p.locator('#out').innerText()));
     ok(`${vp}: INCI verdict`, /Skip|Patch|Buy/.test(await p.locator('#inciOut .verdict').innerText()));
     ok(`${vp}: INCI sources are links`, (await p.locator('#inciOut a[href^="https://"]').count()) > 3);
-    await p.click('#cmpBtn'); await p.waitForSelector('#cmp .cmp', { timeout: 20000 }); const ct = await p.locator('#cmp').innerText();
+    await p.evaluate(()=>{location.hash='#uv'}); await p.waitForTimeout(300); await p.click('#cmpBtn'); await p.waitForSelector('#cmp .cmp', { timeout: 20000 }); const ct = await p.locator('#cmp').innerText();
     ok(`${vp}: London vs Dubai side by side`, /London/.test(ct) && /Dubai/.test(ct) && (ct.match(/UV \d/g) || []).length >= 2);
-    await p.click('#nophoto'); await p.waitForSelector('#out h3', { timeout: 5000 }); ok(`${vp}: no-photo UV plan`, /UV-only plan/.test(await p.locator('#out').innerText()) && /SPF/.test(await p.locator('#out').innerText()));
+    await p.evaluate(()=>{location.hash='#uv'}); await p.waitForTimeout(300); await p.click('#nophoto'); await p.waitForSelector('#out h3', { timeout: 5000, state: 'attached' }); ok(`${vp}: no-photo UV plan`, /UV-only plan/.test(await p.locator('#out').innerText()) && /SPF/.test(await p.locator('#out').innerText()));
     ok(`${vp}: no horizontal overflow`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), await p.evaluate(() => document.documentElement.scrollWidth + '/' + innerWidth));
     const a11y = await p.evaluate(() => ({ img: [...document.images].filter(i => !i.hidden && !i.alt).length, btn: [...document.querySelectorAll('button')].filter(x => !x.innerText.trim() && !x.getAttribute('aria-label')).length,
       inp: [...document.querySelectorAll('input:not([type=hidden]),select,textarea')].filter(x => !(x.labels && x.labels.length) && !x.getAttribute('aria-label')).length,
