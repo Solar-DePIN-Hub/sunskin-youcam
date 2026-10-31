@@ -91,7 +91,7 @@ async function loadSun(lat, lon, place) {
   try {
     const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=uv_index_max&hourly=uv_index&timezone=auto&forecast_days=7`).then(r => r.json());
     const today = r.hourly.time.map((t, i) => ({ t, uv: r.hourly.uv_index[i] })).filter(x => x.t.startsWith(r.daily.time[0])).map(x => ({ h: +x.t.slice(11, 13), uv: x.uv ?? 0 }));
-    sun = { today: r.daily.uv_index_max[0] ?? 0, week: r.daily.uv_index_max.map(x => x ?? 0), days: r.daily.time, window: SunPlan.uvWindow(today), place };
+    sun = { today: r.daily.uv_index_max[0] ?? 0, week: r.daily.uv_index_max.map(x => x ?? 0), days: r.daily.time, window: SunPlan.uvWindow(today), place, hourly: today };
     const w = sun.window, dn = d => new Date(d + 'T12:00').toLocaleDateString('en', { weekday: 'short' });
     $('#uvout').innerHTML = `<span class="uvbig" style="color:${uvColor(sun.today)}">UV ${sun.today.toFixed(1)}</span> ${SunPlan.uvLabel(sun.today)} today${place ? ' in ' + esc(place) : ''}<br>
       <span class="note">${w ? `Protect your skin from <b>${w.from}:00 to ${w.to}:00</b> (UV ≥ 3), peak at ${w.peakHour}:00.` : 'UV stays below 3 all day.'}</span>
